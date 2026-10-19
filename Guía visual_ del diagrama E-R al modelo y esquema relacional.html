@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guía visual: del diagrama E-R al modelo y esquema relacional</title>
+<style>
+:root{--bg:#fff;--ink:#1f2328;--mut:#5b6470;--line:#c9d1d9;--acc:#2457c5;--hd:#2457c5;--card:#f6f8fa;--pk:#fff3c4;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--ink:#e6e8eb;--mut:#9aa4b0;--line:#3a424d;--acc:#8fb0ff;--hd:#2f5ec4;--card:#1c2027;--pk:#3d3512;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171c;--ink:#e6e8eb;--mut:#9aa4b0;--line:#3a424d;--acc:#8fb0ff;--hd:#2f5ec4;--card:#1c2027;--pk:#3d3512;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.8rem;margin:.2em 0}h2{font-size:1.3rem;margin:0 0 .3em}h3{font-size:.95rem;margin:1.2em 0 .4em;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}
+.sub{color:var(--mut);margin-top:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:18px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.rule{border-left:4px solid var(--acc);padding:2px 12px;margin:.6em 0}
+.sc{overflow-x:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;font:13px/1.5 ui-monospace,Menlo,monospace;margin:0}
+table.r{border-collapse:collapse;width:100%;font-size:.9rem;display:block;overflow-x:auto}
+.r td,.r th{border:1px solid var(--line);padding:6px 9px;text-align:left}.r th{background:var(--hd);color:#fff}
+.tag{display:inline-block;background:var(--acc);color:var(--bg);border-radius:6px;padding:0 8px;font-weight:700;font-size:.85rem}
+.note{color:var(--mut)}
+svg text{fill:var(--ink);font:11px system-ui,sans-serif}
+.sh{fill:var(--bg);stroke:var(--ink);stroke-width:1.3}.ent{fill:var(--card);stroke:var(--acc);stroke-width:2}
+.ln{stroke:var(--ink);stroke-width:1.2}.u{text-decoration:underline}
+svg .cd{fill:var(--acc);font-weight:700;font-size:13px}
+svg .nt{fill:var(--acc);font-style:italic;font-size:11px}
+svg .pl{paint-order:stroke;stroke:var(--bg);stroke-width:4px;font-weight:700;font-size:11px}
+.b{fill:var(--bg)}.h{fill:var(--hd)}svg .ht{fill:#fff;font-weight:700;font-size:12px}.pk{fill:var(--pk)}.l{stroke:var(--line)}
+svg .k{font:10px ui-monospace,Menlo,monospace;fill:var(--acc);font-weight:700}svg .d{font:10.5px system-ui,sans-serif;fill:var(--mut)}
+.bo{fill:none;stroke:var(--hd);stroke-width:1.5}.ar{fill:none;stroke:#d9480f;stroke-width:1.8}
+</style></head><body><main>
+<h1>🗂️ Del diagrama E-R al modelo y esquema relacional</h1>
+<p class="sub">Guía visual para estudiantes: 9 casos de transformación, desde una sola entidad hasta relaciones ternarias.</p>
+
+<div class="card"><h2>Cómo leer los diagramas</h2><div class="grid">
+<div><b>Diagrama E-R (Chen)</b><br>▭ entidad · ⬭ atributo (<u>subrayado</u> = identificador) · ◇ relación.<br>Sobre el rombo va la <b>cardinalidad</b> (p. ej. 1:N).</div>
+<div><b>Participación (lectura cruzada)</b><br>El rótulo <b>(mín,máx)</b> junto a la entidad B dice cuántas instancias de B se asocian a <i>una</i> instancia de la entidad del otro lado. Se lee “al otro lado”.</div>
+<div><b>Modelo relacional</b><br>Cabecera = tabla. Columnas: <b>clave</b> (PK, FK, UQ) · propiedad · <b>dominio</b> (descripción de los valores válidos, no el tipo SQL). La <span style="color:#d9480f;font-weight:700">flecha</span> sale de la FK y apunta a la PK de origen. Fondo amarillo = fila PK.</div>
+<div><b>Esquema relacional</b><br>Texto: <code>TABLA(cols)</code>. La <u>PK va subrayada</u> y la FK lleva <code>*</code>. Luego se listan PK, AK (UQ), FK y NO NULOS.</div></div></div>
+
+<div class="card"><h2>Resumen de reglas</h2>
+<table class="r"><tr><th>Caso</th><th>Qué se crea</th><th>Clave primaria / FK</th></tr>
+<tr><td>Una entidad</td><td>1 tabla</td><td>PK = identificador. Compuestos → varias columnas. Multivaluados → tabla aparte. Derivados → no se guardan.</td></tr>
+<tr><td>1:1</td><td>FK + UQ en una tabla</td><td>La FK va en la entidad con participación total (la que siempre tiene pareja).</td></tr>
+<tr><td>1:N</td><td>FK en una tabla</td><td>La FK va en la tabla del lado N.</td></tr>
+<tr><td>N:M</td><td>Tabla nueva</td><td>PK = FK1 + FK2.</td></tr>
+<tr><td>1:1:1</td><td>Tabla nueva</td><td>PK = cualquier par de FK; los otros pares son UQ compuestas.</td></tr>
+<tr><td>1:1:N (a) N participa varias veces</td><td>Tabla nueva</td><td>PK = lado N + un lado 1; el otro par (N + otro 1) es UQ.</td></tr>
+<tr><td>1:1:N (b) N participa una sola vez</td><td>Dos FK dentro de la tabla N</td><td>Las PK de los dos lados 1 migran como FK a la tabla N.</td></tr>
+<tr><td>1:N:M</td><td>Tabla nueva</td><td>PK = lado N + lado M; la FK del lado 1 es NOT NULL, fuera de la PK.</td></tr>
+<tr><td>N:M:P</td><td>Tabla nueva</td><td>PK = las tres FK.</td></tr></table></div>
+<div id="cases"></div>
+<p class="note">Ejemplos con dominio inventado para ilustrar. En las claves, UQ1/UQ2 indican columnas que forman juntas una única restricción UNIQUE compuesta.</p>
+
+<script>
+const W=400,RH=20,HH=24;
+const ell=(x,y,a)=>{const k=a[0]=='*',t=k?a.slice(1):a;return `<ellipse class="sh" cx="${x}" cy="${y}" rx="50" ry="14"/><text x="${x}" y="${y+4}" text-anchor="middle"${k?' class="u"':''}>${t}</text>`};
+const ln=(a,b,c,d)=>`<line class="ln" x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
+function er(E,R,L,vb,nt=[]){let a='',b='';
+E.forEach(([n,x,y,at,d])=>{at.forEach((t,j)=>{const ax=x+(j-(at.length-1)/2)*104,ay=y+d*74;a+=ln(ax,ay,x,y);b+=ell(ax,ay,t)});b+=`<rect class="ent" x="${x-55}" y="${y-19}" width="110" height="38"/><text x="${x}" y="${y+4}" text-anchor="middle" style="font-weight:700">${n}</text>`});
+if(R){const[n,x,y,c,ra=[]]=R;ra.forEach(([t,dx,dy])=>{a+=ln(x+dx,y+dy,x,y);b+=ell(x+dx,y+dy,t)});
+L.forEach(([i,t])=>{const[,ex,ey]=E[i],dx=x-ex,dy=y-ey,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d,e=Math.min(55/(Math.abs(ux)||1e-9),19/(Math.abs(uy)||1e-9)),v=Math.abs(uy)>.7;a+=ln(ex,ey,x,y);b+=`<text class="pl" x="${ex+ux*(e+30)+(v?28:0)}" y="${ey+uy*(e+30)+(v?4:-8)}" text-anchor="middle">${t}</text>`});
+b+=`<polygon class="sh" points="${x-62},${y} ${x},${y-30} ${x+62},${y} ${x},${y+30}"/><text x="${x}" y="${y+4}" text-anchor="middle">${n}</text><text class="cd" x="${x}" y="${y-38}" text-anchor="middle">${c}</text>`}
+nt.forEach((t,i)=>b+=`<text class="nt" x="660" y="${290+i*14}" text-anchor="middle">${t}</text>`);
+return `<svg viewBox="${vb}" style="width:100%;min-width:640px">${a}${b}</svg>`}
+function rel(T,A,vb,mw){let s='<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9480f"/></marker></defs>',P={};
+T.forEach(([n,x,y,r])=>{P[n]={x,y,r};const hh=HH+r.length*RH;
+s+=`<rect class="b" x="${x}" y="${y}" width="${W}" height="${hh}"/><rect class="h" x="${x}" y="${y}" width="${W}" height="${HH}" rx="4"/><text class="ht" x="${x+W/2}" y="${y+16}" text-anchor="middle">${n}</text>`;
+r.forEach((q,i)=>{const[k,a,d]=q.split('|'),yy=y+HH+i*RH;s+=`${k.includes('PK')?`<rect class="pk" x="${x}" y="${yy}" width="${W}" height="${RH}"/>`:''}<line class="l" x1="${x}" x2="${x+W}" y1="${yy}" y2="${yy}"/><text class="k" x="${x+4}" y="${yy+14}">${k}</text><text x="${x+72}" y="${yy+14}">${a}</text><text class="d" x="${x+182}" y="${yy+14}">${d}</text>`});
+s+=`<line class="l" x1="${x+68}" x2="${x+68}" y1="${y+HH}" y2="${y+hh}"/><line class="l" x1="${x+178}" x2="${x+178}" y1="${y+HH}" y2="${y+hh}"/><rect class="bo" x="${x}" y="${y}" width="${W}" height="${hh}" rx="4"/>`});
+const ry=(p,c)=>p.y+HH+p.r.findIndex(q=>q.split('|')[1]==c)*RH+RH/2;
+A.forEach(([f,fr,t,tr,gx])=>{const F=P[f],G=P[t];s+=`<path class="ar" marker-end="url(#ar)" d="M${gx<F.x?F.x:F.x+W} ${ry(F,fr)} H${gx} V${ry(G,tr)} H${gx<G.x?G.x:G.x+W}"/>`});
+return `<svg viewBox="${vb}" style="width:100%;min-width:${mw}px">${s}</svg>`}
+
+const ID='Entero positivo autoincremental',N40='Cadena alfabética, máx. 40 car.',N60='Cadena alfabética, máx. 60 car.',FE='Fecha válida (AAAA-MM-DD)',
+AL=n=>`Alfanumérica estricta de ${n} car.`,TX=n=>`Cadena de hasta ${n} caracteres`,CI='Entero positivo de 7 dígitos';
+const B2='-30 40 820 210',T3='-30 40 820 350',DOC=['PK|id_docente|'+ID,'|nombre|'+N60];
+const ESTUDIANTE_B=['PK|id_estudiante|'+ID,'|nombre|'+N60];
+const C=[
+{t:'Una sola entidad',tag:'Entidad',rule:'Cada entidad se convierte en <b>una tabla</b>. El atributo identificador es la PK; los demás atributos son columnas. Los atributos únicos (ci, correo) se marcan UQ y los obligatorios, NOT NULL.',
+er:er([['ESTUDIANTE',380,140,['*id_estudiante','ci','nombre','apellido','correo'],-1]],0,[],'0 40 760 140'),
+rl:rel([['ESTUDIANTE',150,0,['PK|id_estudiante|'+ID,'UQ|ci|'+CI,'|nombre|'+N40,'|apellido|'+N40,'UQ|correo|Correo válido, máx. 80 caracteres']]],[],'110 -8 460 130',440),
+sc:`ESTUDIANTE(<u>id_estudiante</u>, ci, nombre, apellido, correo)
+PK: {id_estudiante}
+AK: UQ(ci), UQ(correo)
+NO NULOS: nombre, apellido, ci, correo`},
+
+{t:'Relación 1:1',tag:'1:1',rule:'No hace falta tabla nueva. La <b>FK va en la entidad con participación total</b>: aquí PASAPORTE siempre pertenece a una persona (rótulo (1,1) junto a PERSONA). Como es 1:1, la FK además es <b>UQ</b>.',
+er:er([['PERSONA',130,150,['*id_persona','ci','nombre'],-1],['PASAPORTE',630,150,['*nro_pasaporte','fecha_emision','fecha_venc'],-1]],['posee',380,150,'1:1'],[[0,'(1,1)'],[1,'(0,1)']],'-30 40 820 140'),
+rl:rel([['PERSONA',0,0,['PK|id_persona|'+ID,'UQ|ci|'+CI,'|nombre|'+N60]],['PASAPORTE',450,0,['PK|nro_pasaporte|'+AL(9),'|fecha_emision|'+FE,'|fecha_venc|Fecha posterior a la emisión','FK,UQ|id_persona|'+ID]]],[['PASAPORTE','id_persona','PERSONA','id_persona',425]],'-30 -8 940 130',780),
+sc:`PERSONA(<u>id_persona</u>, ci, nombre)
+PK: {id_persona}
+AK: UQ(ci)
+NO NULOS: ci, nombre
+
+PASAPORTE(<u>nro_pasaporte</u>, fecha_emision, fecha_venc, id_persona*)
+PK: {nro_pasaporte}
+AK: UQ(id_persona)
+FK1: PASAPORTE(id_persona) → PERSONA(id_persona).
+NO NULOS: fecha_emision, fecha_venc, id_persona`},
+
+{t:'Relación 1:N',tag:'1:N',rule:'La <b>FK se coloca en la tabla del lado N</b> (EMPLEADO) y referencia la PK del lado 1 (DEPARTAMENTO). Si la participación del lado N es total, la FK es NOT NULL.',
+er:er([['DEPARTAMENTO',130,150,['*cod_dep','nombre','ubicacion'],-1],['EMPLEADO',630,150,['*id_empleado','nombre','salario'],-1]],['emplea',380,150,'1:N'],[[0,'(1,1)'],[1,'(0,N)']],'-30 40 820 140'),
+rl:rel([['DEPARTAMENTO',0,0,['PK|cod_dep|'+AL(4),'|nombre|'+N40,'|ubicacion|'+TX(60)]],['EMPLEADO',450,0,['PK|id_empleado|'+ID,'|nombre|'+N60,'|salario|Decimal positivo, 2 decimales','FK|cod_dep|'+AL(4)]]],[['EMPLEADO','cod_dep','DEPARTAMENTO','cod_dep',425]],'-30 -8 940 130',780),
+sc:`DEPARTAMENTO(<u>cod_dep</u>, nombre, ubicacion)
+PK: {cod_dep}
+NO NULOS: nombre
+
+EMPLEADO(<u>id_empleado</u>, nombre, salario, cod_dep*)
+PK: {id_empleado}
+FK1: EMPLEADO(cod_dep) → DEPARTAMENTO(cod_dep).
+NO NULOS: nombre, cod_dep`},
+
+{t:'Relación N:M',tag:'N:M',rule:'Se crea una <b>tabla intermedia</b> con una FK a cada entidad. Su <b>PK es la combinación de ambas FK</b>. Los atributos de la relación (fecha) pasan a ser columnas de esa tabla.',
+er:er([['ESTUDIANTE',130,150,['*id_estudiante','nombre','apellido'],-1],['ASIGNATURA',630,150,['*cod_asignatura','nombre','creditos'],-1]],['se matricula',380,150,'N:M',[['fecha',0,72]]],[[0,'(0,N)'],[1,'(0,N)']],B2),
+rl:rel([['ESTUDIANTE',0,0,['PK|id_estudiante|'+ID,'|nombre|'+N40,'|apellido|'+N40]],['ASIGNATURA',450,0,['PK|cod_asignatura|'+AL(6),'|nombre|'+N60,'|creditos|Entero positivo entre 1 y 12']],['MATRICULA',225,130,['PK,FK|id_estudiante|'+ID,'PK,FK|cod_asignatura|'+AL(6),'|fecha|'+FE]]],[['MATRICULA','id_estudiante','ESTUDIANTE','id_estudiante',-18],['MATRICULA','cod_asignatura','ASIGNATURA','cod_asignatura',868]],'-34 -8 940 232',800),
+sc:`ESTUDIANTE(<u>id_estudiante</u>, nombre, apellido)
+PK: {id_estudiante}
+NO NULOS: nombre, apellido
+
+ASIGNATURA(<u>cod_asignatura</u>, nombre, creditos)
+PK: {cod_asignatura}
+NO NULOS: nombre, creditos
+
+MATRICULA(<u>id_estudiante*</u>, <u>cod_asignatura*</u>, fecha)
+PK compuesta: {id_estudiante, cod_asignatura}
+FK1: MATRICULA(id_estudiante) → ESTUDIANTE(id_estudiante).
+FK2: MATRICULA(cod_asignatura) → ASIGNATURA(cod_asignatura).
+NO NULOS: fecha`},
+
+{t:'Ternaria 1:1:1',tag:'1:1:1',rule:'Tabla nueva con <b>tres FK</b>. Cada pareja de entidades determina a la tercera, así que <b>cualquier par puede ser PK</b>. Se elige uno y los otros dos pares se declaran <b>UQ compuestas</b>.',
+er:er([['DOCENTE',130,150,['*id_docente','nombre'],-1],['AULA',630,150,['*cod_aula','capacidad'],-1],['ASIGNATURA',380,290,['*cod_asignatura','nombre'],1]],['asigna',380,150,'1:1:1'],[[0,'(0,1)'],[1,'(0,1)'],[2,'(0,1)']],T3),
+rl:rel([['DOCENTE',0,0,DOC],['ASIGNATURA',450,0,['PK|cod_asignatura|'+AL(6),'|nombre|'+N60]],['AULA',900,0,['PK|cod_aula|'+AL(5),'|capacidad|Entero positivo entre 1 y 300']],['ASIGNACION',450,120,['PK,FK,UQ2|cod_asignatura|'+AL(6),'PK,FK,UQ1|id_docente|'+ID,'FK,UQ1,UQ2|cod_aula|'+AL(5)]]],[['ASIGNACION','cod_asignatura','ASIGNATURA','cod_asignatura',425],['ASIGNACION','id_docente','DOCENTE','id_docente',-18],['ASIGNACION','cod_aula','AULA','cod_aula',1318]],'-34 -8 1380 225',1000),
+sc:`DOCENTE(<u>id_docente</u>, nombre)
+PK: {id_docente}
+ASIGNATURA(<u>cod_asignatura</u>, nombre)
+PK: {cod_asignatura}
+AULA(<u>cod_aula</u>, capacidad)
+PK: {cod_aula}
+
+ASIGNACION(<u>id_docente*</u>, <u>cod_asignatura*</u>, cod_aula*)
+PK compuesta: {cod_asignatura, id_docente}
+AK: UQ(id_docente, cod_aula), UQ(cod_asignatura, cod_aula)
+FK1: ASIGNACION(id_docente) → DOCENTE(id_docente).
+FK2: ASIGNACION(cod_asignatura) → ASIGNATURA(cod_asignatura).
+FK3: ASIGNACION(cod_aula) → AULA(cod_aula).
+NO NULOS: id_docente, cod_asignatura, cod_aula`},
+
+{t:'Ternaria 1:1:N (a): N participa varias veces',tag:'1:1:N (a)',rule:'Un estudiante puede aparecer en <b>varias</b> combinaciones (tutor, empresa). Se crea tabla nueva con tres FK. El lado N (ESTUDIANTE) <b>forma parte de la PK</b>, junto con uno de los lados 1; el otro par (N + el otro lado 1) queda como <b>UQ compuesta</b>.',
+er:er([['TUTOR',130,150,['*id_tutor','nombre'],-1],['EMPRESA',630,150,['*cod_empresa','razon_social'],-1],['ESTUDIANTE',380,290,['*id_estudiante','nombre'],1]],['realiza pasantía',380,150,'1:1:N'],[[0,'(0,1)'],[1,'(0,1)'],[2,'(0,N)']],T3,['Restricción: cada ESTUDIANTE puede','participar varias veces']),
+rl:rel([['TUTOR',0,0,['PK|id_tutor|'+ID,'|nombre|'+N60]],['ESTUDIANTE',450,0,ESTUDIANTE_B],['EMPRESA',900,0,['PK|cod_empresa|'+AL(6),'|razon_social|'+TX(80)]],['PASANTIA',450,120,['PK,FK,UQ1|id_estudiante|'+ID,'PK,FK|id_tutor|'+ID,'FK,UQ1|cod_empresa|'+AL(6)]]],[['PASANTIA','id_estudiante','ESTUDIANTE','id_estudiante',425],['PASANTIA','id_tutor','TUTOR','id_tutor',-18],['PASANTIA','cod_empresa','EMPRESA','cod_empresa',1318]],'-34 -8 1380 225',1000),
+sc:`TUTOR(<u>id_tutor</u>, nombre)
+PK: {id_tutor}
+ESTUDIANTE(<u>id_estudiante</u>, nombre)
+PK: {id_estudiante}
+EMPRESA(<u>cod_empresa</u>, razon_social)
+PK: {cod_empresa}
+
+PASANTIA(<u>id_estudiante*</u>, <u>id_tutor*</u>, cod_empresa*)
+PK compuesta: {id_estudiante, id_tutor}
+AK: UQ(id_estudiante, cod_empresa)
+FK1: PASANTIA(id_estudiante) → ESTUDIANTE(id_estudiante).
+FK2: PASANTIA(id_tutor) → TUTOR(id_tutor).
+FK3: PASANTIA(cod_empresa) → EMPRESA(cod_empresa).
+NO NULOS: id_estudiante, id_tutor, cod_empresa`},
+
+{t:'Ternaria 1:1:N (b): N participa una sola vez',tag:'1:1:N (b)',rule:'Si cada estudiante participa <b>como máximo una vez</b>, el estudiante determina a su tutor y a su empresa. No hace falta tabla nueva: las PK de los dos lados 1 <b>migran como FK a la tabla N</b>. Si la participación es parcial, ambas FK admiten NULL (con un CHECK que obligue a ser las dos nulas o las dos no nulas). <b>Cómo decidir:</b> pregunta “¿un mismo N puede aparecer en más de una combinación?”. Si sí → caso (a); si no → caso (b). Los rótulos (mín,máx) no lo distinguen, por eso se anota como restricción.',
+er:er([['TUTOR',130,150,['*id_tutor','nombre'],-1],['EMPRESA',630,150,['*cod_empresa','razon_social'],-1],['ESTUDIANTE',380,290,['*id_estudiante','nombre'],1]],['realiza pasantía',380,150,'1:1:N'],[[0,'(0,1)'],[1,'(0,1)'],[2,'(0,N)']],T3,['Restricción: cada ESTUDIANTE participa','como máximo una vez']),
+rl:rel([['TUTOR',0,0,['PK|id_tutor|'+ID,'|nombre|'+N60]],['ESTUDIANTE',450,0,['PK|id_estudiante|'+ID,'|nombre|'+N60,'FK|id_tutor|'+ID,'FK|cod_empresa|'+AL(6)]],['EMPRESA',900,0,['PK|cod_empresa|'+AL(6),'|razon_social|'+TX(80)]]],[['ESTUDIANTE','id_tutor','TUTOR','id_tutor',425],['ESTUDIANTE','cod_empresa','EMPRESA','cod_empresa',875]],'-34 -8 1380 130',1000),
+sc:`TUTOR(<u>id_tutor</u>, nombre)
+PK: {id_tutor}
+NO NULOS: nombre
+
+EMPRESA(<u>cod_empresa</u>, razon_social)
+PK: {cod_empresa}
+NO NULOS: razon_social
+
+ESTUDIANTE(<u>id_estudiante</u>, nombre, id_tutor*, cod_empresa*)
+PK: {id_estudiante}
+FK1: ESTUDIANTE(id_tutor) → TUTOR(id_tutor).
+FK2: ESTUDIANTE(cod_empresa) → EMPRESA(cod_empresa).
+NO NULOS: nombre
+CHECK: (id_tutor IS NULL) = (cod_empresa IS NULL)`},
+
+{t:'Ternaria 1:N:M',tag:'1:N:M',rule:'Tabla nueva. La <b>PK es lado N + lado M</b> (ASIGNATURA + CARRERA): cada pareja determina un único docente. La FK del lado 1 (DOCENTE) <b>no entra en la PK</b>; es NOT NULL.',
+er:er([['DOCENTE',130,150,['*id_docente','nombre'],-1],['CARRERA',630,150,['*cod_carrera','nombre'],-1],['ASIGNATURA',380,290,['*cod_asignatura','nombre'],1]],['dicta',380,150,'1:N:M'],[[0,'(1,1)'],[1,'(0,N)'],[2,'(0,N)']],T3),
+rl:rel([['DOCENTE',0,0,DOC],['ASIGNATURA',450,0,['PK|cod_asignatura|'+AL(6),'|nombre|'+N60]],['CARRERA',900,0,['PK|cod_carrera|'+AL(4),'|nombre|'+N60]],['DICTADO',450,120,['PK,FK|cod_asignatura|'+AL(6),'FK|id_docente|'+ID,'PK,FK|cod_carrera|'+AL(4)]]],[['DICTADO','cod_asignatura','ASIGNATURA','cod_asignatura',425],['DICTADO','id_docente','DOCENTE','id_docente',-18],['DICTADO','cod_carrera','CARRERA','cod_carrera',1318]],'-34 -8 1380 225',1000),
+sc:`DOCENTE(<u>id_docente</u>, nombre)
+PK: {id_docente}
+ASIGNATURA(<u>cod_asignatura</u>, nombre)
+PK: {cod_asignatura}
+CARRERA(<u>cod_carrera</u>, nombre)
+PK: {cod_carrera}
+
+DICTADO(<u>cod_asignatura*</u>, <u>cod_carrera*</u>, id_docente*)
+PK compuesta: {cod_asignatura, cod_carrera}
+FK1: DICTADO(cod_asignatura) → ASIGNATURA(cod_asignatura).
+FK2: DICTADO(cod_carrera) → CARRERA(cod_carrera).
+FK3: DICTADO(id_docente) → DOCENTE(id_docente).
+NO NULOS: id_docente`},
+
+{t:'Ternaria N:M:P',tag:'N:M:P',rule:'Tabla nueva cuya <b>PK reúne las tres FK</b>: ninguna pareja determina a la tercera. Los atributos de la relación (cantidad) son columnas normales.',
+er:er([['PROVEEDOR',130,150,['*id_proveedor','nombre'],-1],['PROYECTO',630,150,['*cod_proyecto','nombre'],-1],['PRODUCTO',380,290,['*cod_producto','descripcion'],1]],['suministra',380,150,'N:M:P',[['cantidad',120,75]]],[[0,'(0,N)'],[1,'(0,N)'],[2,'(0,N)']],T3),
+rl:rel([['PROVEEDOR',0,0,['PK|id_proveedor|'+ID,'|nombre|'+N60]],['PRODUCTO',450,0,['PK|cod_producto|'+AL(8),'|descripcion|'+TX(80)]],['PROYECTO',900,0,['PK|cod_proyecto|'+AL(6),'|nombre|'+N60]],['SUMINISTRO',450,120,['PK,FK|cod_producto|'+AL(8),'PK,FK|id_proveedor|'+ID,'PK,FK|cod_proyecto|'+AL(6),'|cantidad|Entero positivo (≥ 1)']]],[['SUMINISTRO','cod_producto','PRODUCTO','cod_producto',425],['SUMINISTRO','id_proveedor','PROVEEDOR','id_proveedor',-18],['SUMINISTRO','cod_proyecto','PROYECTO','cod_proyecto',1318]],'-34 -8 1380 245',1000),
+sc:`PROVEEDOR(<u>id_proveedor</u>, nombre)
+PK: {id_proveedor}
+PRODUCTO(<u>cod_producto</u>, descripcion)
+PK: {cod_producto}
+PROYECTO(<u>cod_proyecto</u>, nombre)
+PK: {cod_proyecto}
+
+SUMINISTRO(<u>id_proveedor*</u>, <u>cod_producto*</u>, <u>cod_proyecto*</u>, cantidad)
+PK compuesta: {id_proveedor, cod_producto, cod_proyecto}
+FK1: SUMINISTRO(id_proveedor) → PROVEEDOR(id_proveedor).
+FK2: SUMINISTRO(cod_producto) → PRODUCTO(cod_producto).
+FK3: SUMINISTRO(cod_proyecto) → PROYECTO(cod_proyecto).
+NO NULOS: cantidad`}
+];
+document.getElementById('cases').innerHTML=C.map((c,i)=>`<section class="card"><h2><span class="tag">${c.tag}</span> Caso ${i+1}: ${c.t}</h2><p class="rule">${c.rule}</p><h3>1 · Diagrama E-R (Chen)</h3><div class="sc">${c.er}</div><h3>2 · Modelo relacional</h3><div class="sc">${c.rl}</div><h3>3 · Esquema relacional</h3><pre>${c.sc}</pre></section>`).join('');
+</script></main></body></html>
